@@ -41,21 +41,28 @@ def user_login(request):
         body = simplejson.loads(request.body)
         # username = body["username"]
         # passwd = body["password"]
+        # print("body:{}".format(body))
         user = authenticate(**body) # user是和数据库对应的真实的用户，is_authencated方法返回的是True
         # print(type(user), user)
-        print("="*30)
+        # print("="*30)
+        # if user:
+            # print(type(user), user, "\n","-"*30)
         # print(type(request.user), request.user) # request.user 是一个匿名用户，is_authencated方法返回的是FALSE
         if user:
-            login(request, user)
+            login(request, user) # 绑定user和request.user
             session:SessionStore = request.session
-            session.set_expiry()
-            print(type(request.session), "\n ", "="*30)
+            # session.set_expiry(60) # 设置session的过期时间
+            # print(type(request.session), "\n ", "="*30)
+            session["userinfo"] ={
+                "id": request.user.id,
+                "username": request.user.username
+            }
             """
             1. 各种后台习惯上通过request.session来获取session的值
             2. request.user = user : 将真实的用户绑定给request, 不在是原来默认的匿名用户
             """
-            print(*request.session.items(), sep="\n")
-            return HttpResponse(204)
+            # print(*request.session.items(), sep="\n")
+            return HttpResponse("success login", status=204)
         return JsonResponse(Message.INVALID_USERNAME_OR_PASSWD, status=200)
     except Exception as e:
         # return HttpResponse(status=200)
@@ -76,12 +83,13 @@ def login_required(viewfunc):
 # @login_required(login_url="/user/login")
 def user_logout(request:HttpRequest):
     # print(type(request.user ),request.user)
+    # logout(request) # 会彻底清除sessionid.移除request.user ；清除django_session记录(无痕浏览器)
     print("user view logout in", "+"*30)
     print(request.user)
     print(*request.session.items(), sep="\n")
     print("user view logout out", "+"*30)
 
-    return HttpResponse("看见啦", status=401)
+    return HttpResponse("看见啦", status=200)
 
 # from django.contrib.sessions.middleware import SessionMiddleware
 # from django.contrib.auth.middleware import AuthenticationMiddleware  # 依赖session的中间件
