@@ -1,4 +1,5 @@
 from functools import wraps
+from math import ceil
 from django.http import HttpResponse, JsonResponse
 from django.views import View
 from django.db.transaction import atomic
@@ -73,12 +74,23 @@ class Post_view(View):
             page = validate(request.GET, 'page', 1, int, validate_func=lambda value, default: value if value >0 and value <51 else default)
             size = validate(request.GET, 'size', 20, int, validate_func=lambda x, y: x if x>0 and x <101 else y)
             start = size*(page-1)
-            posts = Post.objects.order_by('-pk')[start:start+size]
+            O = Post.objects
+            total = O.count()
+            posts = O.order_by('-pk')[start:start+size]
+            pages = ceil(total/size)
             print(page,size)
-            return JsonResponse({'posts':[
+            return JsonResponse({
+                'posts':[
                 {'id':post.id, 'title':post.title}
                 for post in posts
-                ]}
+                ],
+                'pagination':{
+                    'page':page,
+                    'size':size,
+                    'total':total,
+                    'pages': pages
+                }
+                }
             )
         except Exception as e:
             return HttpResponse("请求方式错误", status=405)
